@@ -4,27 +4,23 @@ from sqlalchemy.exc import SQLAlchemyError
 from database import engine
 import models
 from hashing_password import hash_password 
-from models import User, Todo
-from schemas import  UserCreate, TodoCreate, TodoUpdate, UserRead, TodoRead, Token
+from models import User, Post
+from schemas import  UserCreate, PostCreate, PostUpdate, UserRead, PostRead, Token
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
-from dependencies import get_db,settings,create_access_token,authenticate_user,get_current_user
+from dependencies import get_db, settings, create_access_token, authenticate_user, get_current_user
 from datetime import timedelta
 
 
-models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
-from sqlalchemy.exc import SQLAlchemyError
-from fastapi import HTTPException
 
 @app.post("/users", response_model=UserRead)
-def create_user(user: UserCreate,  db: Session = Depends(get_db)):
-    already_existing_user = db.query(User).filter(User.email == user.email). first()
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    already_existing_user = db.query(User).filter(User.email == user.email).first()
     if already_existing_user:
-        raise HTTPException(status_code=400, detail="User already exist in tha database")
+        raise HTTPException(status_code=400, detail="User already exists in the database")
     try:
-        db_user = User(username=user.username,fullname=user.fullname,email=user.email, hashed_password=hash_password(user.password))
+        db_user = User(username=user.username, fullname=user.fullname, email=user.email, hashed_password=hash_password(user.password))
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
@@ -34,10 +30,9 @@ def create_user(user: UserCreate,  db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Database error")
 
 
+
 @app.get("/users/me", response_model=UserRead)
-def read_user(
-    user : User = Depends(get_current_user),
-    db: Session = Depends(get_db)):
+def read_user(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         db_user = db.query(User).get(user.id)
         if db_user is None:
@@ -48,96 +43,76 @@ def read_user(
         raise HTTPException(status_code=500, detail="Database error")
 
 
-@app.post("/todos", response_model=TodoRead)
-def create_todo(
-    todo: TodoCreate,
-    user: User = Depends(get_current_user), 
-    db: Session = Depends(get_db)
-):
+@app.post("/posts", response_model=PostRead)
+def create_post(post: PostCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        db_todo = Todo(
-            title=todo.title,
-            description=todo.description,
+        db_post = Post(
+            title=post.title,
+            content=post.content,
             owner_id=user.id 
         )
 
-        db.add(db_todo)
+        db.add(db_post)
         db.commit()
-        db.refresh(db_todo)
-        return db_todo
+        db.refresh(db_post)
+        return db_post
     except SQLAlchemyError as e:
         print("Error caught:", e)
         raise HTTPException(status_code=500, detail="Database error")
 
 
-
-@app.get("/todos/{todo_id}", response_model=TodoRead)
-def read_todo(
-    todo_id: int,
-    user : User = Depends(get_current_user),
-    db: Session = Depends(get_db)):
+@app.get("/posts/{post_id}", response_model=PostRead)
+def read_post(post_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        db_todo = db.query(Todo).get(todo_id)
-        if db_todo is None:
-            raise HTTPException(status_code=404, detail="Todo not found")
-        if db_todo.owner_id != user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete this todo")
-
-        return db_todo
+        db_post = db.query(Post).get(post_id)
+        if db_post is None:
+            raise HTTPException(status_code=404, detail="Post not found")
+        if db_post.owner_id != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to read this post")
+        return db_post
     except SQLAlchemyError as e:
         print("Error caught:", e)
         raise HTTPException(status_code=500, detail="Database error")
 
 
-@app.put("/todos/{todo_id}", response_model=TodoRead)
-def update_todo(
-    todo_id: int, 
-    todo: TodoUpdate,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)):
+@app.put("/posts/{post_id}", response_model=PostRead)
+def update_post(post_id: int, post: PostUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        db_todo = db.query(Todo).get(todo_id)
-        if db_todo is None:
-            raise HTTPException(status_code=404, detail="Todo not found")
-        if db_todo.owner_id != user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete this todo")
-        db_todo.title = todo.title
-        db_todo.description = todo.description
+        db_post = db.query(Post).get(post_id)
+        if db_post is None:
+            raise HTTPException(status_code=404, detail="Post not found")
+        if db_post.owner_id != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to update this post")
+        db_post.title = post.title
+        db_post.content = post.content
         db.commit()
-        db.refresh(db_todo)
-        return db_todo
+        db.refresh(db_post)
+        return db_post
     except SQLAlchemyError as e:
         print("Error caught:", e)
         raise HTTPException(status_code=500, detail="Database error")
 
 
-@app.delete("/todos/{todo_id}")
-def delete_todo(todo_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        db_todo = db.query(Todo).get(todo_id)
-        if db_todo is None:
-            raise HTTPException(status_code=404, detail="Todo not found")
+        db_post = db.query(Post).get(post_id)
+        if db_post is None:
+            raise HTTPException(status_code=404, detail="Post not found")
 
-        if db_todo.owner_id != user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete this todo")
+        if db_post.owner_id != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete this post")
 
-        db.delete(db_todo)
+        db.delete(db_post)
         db.commit()
-        return {"message": "Todo deleted"}
+        return {"message": "Post deleted"}
     except SQLAlchemyError as e:
         print("Error caught:", e)
         raise HTTPException(status_code=500, detail="Database error")
-
-
-
 
 
 @app.post("/token", response_model=Token)
-async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db : Session = Depends(get_db)
-):
-
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -146,8 +121,5 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
-    
