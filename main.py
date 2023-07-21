@@ -43,7 +43,7 @@ def read_user(user: User = Depends(get_current_user), db: Session = Depends(get_
         raise HTTPException(status_code=500, detail="Database error")
 
 
-@app.post("/posts", response_model=PostRead)
+@app.post("/posts", dependencies=[Depends(get_current_user)],response_model=PostRead)
 def create_post(post: PostCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         db_post = Post(
