@@ -11,6 +11,7 @@ from typing import Annotated
 from dependencies import get_db, settings, create_access_token, authenticate_user, get_current_user
 from datetime import timedelta
 
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -30,7 +31,6 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Database error")
 
 
-
 @app.get("/users/me", response_model=UserRead)
 def read_user(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
@@ -43,7 +43,7 @@ def read_user(user: User = Depends(get_current_user), db: Session = Depends(get_
         raise HTTPException(status_code=500, detail="Database error")
 
 
-@app.post("/posts", dependencies=[Depends(get_current_user)],response_model=PostRead)
+@app.post("/posts", response_model=PostRead)
 def create_post(post: PostCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         db_post = Post(
