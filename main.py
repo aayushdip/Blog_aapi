@@ -11,6 +11,7 @@ from typing import Annotated
 from dependencies import get_db, settings, create_access_token, authenticate_user, get_current_user
 from datetime import timedelta
 
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -28,7 +29,6 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     except SQLAlchemyError as e:
         print("Error caught:", e)
         raise HTTPException(status_code=500, detail="Database error")
-
 
 
 @app.get("/users/me", response_model=UserRead)
