@@ -4,8 +4,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.database import engine
 import app.models as models
 from app.hashing_password import hash_password
-from app.models import User, Post
-from app.schemas import UserCreate, PostCreate, PostUpdate, UserRead, PostRead, Token
+from app.models.user import User
+from app.models.post import Post
+from app.schemas.user_schema import UserCreate, UserRead
+from app.schemas.post_schema import PostCreate, PostRead, PostUpdate
+from app.schemas.token_schema import Token, TokenData
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 from app.dependencies import (
@@ -13,12 +16,12 @@ from app.dependencies import (
     settings,
     create_access_token,
     authenticate_user,
-    get_current_user,
     has_access,
 )
 from datetime import timedelta
 
-models.Base.metadata.create_all(bind=engine)
+models.user.Base.metadata.create_all(bind=engine)
+models.post.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

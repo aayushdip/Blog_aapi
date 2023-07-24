@@ -1,41 +1,17 @@
 from fastapi import HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from app.models import User
+from app.models.user import User
 from typing import Annotated
 from app.database import SessionLocal
 from fastapi.security import (
-    OAuth2PasswordBearer,
     HTTPAuthorizationCredentials,
-    HTTPBearer,
 )
 from jose.exceptions import JOSEError
 from app.hashing_password import verify_password
 from datetime import datetime, timedelta
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from jose import JWTError, jwt
-from app.schemas import TokenData
-
-credentials_exception = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Could not validate credentials",
-    headers={"WWW-Authenticate": "Bearer"},
-)
-
-
-class Settings(BaseSettings):
-    SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    SQLALCHEMY_DATABASE_URL: str
-
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
-
-
-settings = Settings()
-security = HTTPBearer()
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+from app.schemas.token_schema import TokenData
+from app import settings
 
 
 # Dependency
@@ -77,7 +53,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)
+    token: Annotated[str, Depends(settings.oauth2_scheme)],
+    db: Session = Depends(get_db),
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -101,7 +78,8 @@ async def get_current_user(
 
 
 async def has_access(
-    credentials: HTTPAuthorizationCredentials = Depends(security), db=Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(settings.security),
+    db=Depends(get_db),
 ):
     token = credentials.credentials
 
@@ -117,11 +95,11 @@ async def has_access(
         )
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise settings.credentials_exception
         token_data = TokenData(username=username)
     except JOSEError as e:  # catches any exception
         raise HTTPException(status_code=401, detail=str(e))
     user = get_user(db, username=token_data.username)
     if user is None:
-        raise credentials_exception
+        raise settings.credentials_exception
     return user
