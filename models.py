@@ -12,9 +12,10 @@ class User(Base):
     username = Column(String, nullable=False, unique=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String)
-    is_active = Column(Boolean, default=True) 
+    is_active = Column(Boolean, default=True)
 
-    posts = relationship("Post", back_populates="author") 
+    posts = relationship("Post", back_populates="author")
+
 
 class Post(Base):
     __tablename__ = "posts"
