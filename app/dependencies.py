@@ -1,19 +1,19 @@
 from fastapi import HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from models import User
+from app.models import User
 from typing import Annotated
-from database import SessionLocal
+from app.database import SessionLocal
 from fastapi.security import (
     OAuth2PasswordBearer,
     HTTPAuthorizationCredentials,
     HTTPBearer,
 )
 from jose.exceptions import JOSEError
-from hashing_password import verify_password
+from app.hashing_password import verify_password
 from datetime import datetime, timedelta
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from jose import JWTError, jwt
-from schemas import TokenData
+from app.schemas import TokenData
 
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,

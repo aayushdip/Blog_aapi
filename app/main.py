@@ -1,14 +1,14 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from database import engine
-import models
-from hashing_password import hash_password
-from models import User, Post
-from schemas import UserCreate, PostCreate, PostUpdate, UserRead, PostRead, Token
+from app.database import engine
+import app.models as models
+from app.hashing_password import hash_password
+from app.models import User, Post
+from app.schemas import UserCreate, PostCreate, PostUpdate, UserRead, PostRead, Token
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
-from dependencies import (
+from app.dependencies import (
     get_db,
     settings,
     create_access_token,

@@ -1,1 +1,5 @@
 .env
+__pycache__
+/app/__pycache__/
+/migrations_file/__pycache__/
+.vscode
