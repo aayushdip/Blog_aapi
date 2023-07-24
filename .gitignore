@@ -2,4 +2,4 @@
 __pycache__
 /app/__pycache__/
 /migrations_file/__pycache__/
-.vscode
+.vscode/
