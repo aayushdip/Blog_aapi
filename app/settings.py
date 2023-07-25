@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi.security import (
     OAuth2PasswordBearer,
     HTTPBearer,
@@ -23,7 +23,7 @@ credentials_exception = HTTPException(
 )
 
 
-settings = Settings()
+setting_object = Settings()
 security = HTTPBearer()
 
 
