@@ -13,12 +13,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 from app.dependencies import (
     get_db,
-    settings,
     create_access_token,
     authenticate_user,
     has_access,
 )
 from datetime import timedelta
+from app.settings import setting_object
 
 models.user.Base.metadata.create_all(bind=engine)
 models.post.Base.metadata.create_all(bind=engine)
@@ -159,7 +159,7 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=setting_object.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )

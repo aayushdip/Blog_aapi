@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from app.schemas.token_schema import TokenData
 from app import settings
+from app.settings import setting_object
 
 
 # Dependency
@@ -47,7 +48,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+        to_encode, setting_object.SECRET_KEY, algorithm=setting_object.ALGORITHM
     )
     return encoded_jwt
 
@@ -63,7 +64,7 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, setting_object.SECRET_KEY, algorithms=[setting_object.ALGORITHM]
         )
         username: str = payload.get("sub")
         if username is None:
@@ -95,11 +96,11 @@ async def has_access(
         )
         username: str = payload.get("sub")
         if username is None:
-            raise settings.credentials_exception
+            raise setting_object.credentials_exception
         token_data = TokenData(username=username)
     except JOSEError as e:  # catches any exception
         raise HTTPException(status_code=401, detail=str(e))
     user = get_user(db, username=token_data.username)
     if user is None:
-        raise settings.credentials_exception
+        raise setting_object.credentials_exception
     return user
